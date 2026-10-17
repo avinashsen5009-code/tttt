@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101116">
+  <meta name="description" content="Local-first English text-to-speech in your browser, powered by Kokoro-82M.">
+  <title>SEN Voice Studio — Browser TTS</title>
+  <link rel="stylesheet" href="./src/style.css">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="SEN Voice Studio home">
+        <span class="brand-mark">S</span>
+        <span class="brand-copy"><strong>SEN <span>VOICE</span></strong><small>LOCAL SPEECH STUDIO</small></span>
+      </a>
+      <div class="header-actions"><div class="local-badge"><span class="pulse-dot"></span><span>ON-DEVICE</span><span class="badge-separator">·</span><span id="connectionState">Browser</span></div><button id="installBtn" class="install-btn hidden" type="button">Install</button></div>
+    </header>
+
+    <main>
+      <section class="hero-row">
+        <div>
+          <p class="eyebrow">KOKORO-82M / IN-BROWSER TTS</p>
+          <h1>Your script.<br><span>Your voice track.</span></h1>
+          <p class="hero-copy">Turn a complete English script into narration on your phone or computer. Speech runs locally in your browser; no paid API or account.</p>
+        </div>
+        <div class="engine-chip"><span class="chip-icon">◉</span><div><strong>Kokoro-82M</strong><small>Browser inference · WASM / WebGPU</small></div></div>
+      </section>
+
+      <section class="model-setup" aria-live="polite">
+        <div class="model-symbol" aria-hidden="true">◉</div>
+        <div class="model-setup-copy"><strong id="modelStateTitle">Model not loaded</strong><p id="modelStateMessage">First use downloads the speech model to this browser. After it is cached, offline use may be available as long as the browser keeps its cache.</p></div>
+        <button id="loadModelBtn" class="load-model-btn" type="button">Load model</button>
+      </section>
+
+      <div class="workspace">
+        <section class="panel script-panel">
+          <div class="panel-heading">
+            <div class="step-title"><span class="step-number">01</span><div><h2>Script input</h2><p>Paste your final English narration</p></div></div>
+            <div class="heading-actions">
+              <label class="text-button" for="textFile">Open .txt</label>
+              <input id="textFile" type="file" accept=".txt,text/plain" hidden>
+              <button id="demoBtn" class="text-button" type="button">Load example</button>
+            </div>
+          </div>
+          <label class="sr-only" for="scriptText">English script</label>
+          <textarea id="scriptText" spellcheck="true" placeholder="Paste your complete English script here…&#10;&#10;Tip: Use paragraphs and punctuation for more natural narration."></textarea>
+          <div class="script-footer">
+            <div class="metrics"><span><strong id="wordCount">0</strong> words</span><span><strong id="charCount">0</strong> characters</span><span>~<strong id="estimateTime">0:00</strong> audio</span></div>
+            <div class="script-actions"><button id="clearBtn" class="text-button subtle" type="button">Clear</button><button id="saveTextBtn" class="text-button" type="button">Save script .txt ↗</button></div>
+          </div>
+          <div class="limit-track"><div id="limitBar"></div></div>
+          <p class="limit-caption"><span id="limitCaption">Ready for your script</span><span>Limit: 40,000 characters</span></p>
+        </section>
+
+        <aside class="panel settings-panel">
+          <div class="panel-heading"><div class="step-title"><span class="step-number">02</span><div><h2>Voice setup</h2><p>Choose your narration sound</p></div></div></div>
+          <label class="field-label" for="engineMode">INFERENCE MODE</label>
+          <div class="select-wrap"><select id="engineMode"><option value="auto" selected>Auto — try GPU, fallback to WASM</option><option value="wasm">Compatibility — WASM CPU</option><option value="webgpu">GPU — WebGPU (larger download)</option></select><span class="select-chevron">⌄</span></div>
+          <div class="voice-note engine-note"><span class="note-icon">i</span><span>GPU acceleration depends on browser/device support. The first model download can be large; generation happens on this device.</span></div>
+          <div class="setting-divider"></div>
+          <label class="field-label" for="voiceSelect">PRIMARY ENGLISH MALE VOICE</label>
+          <div class="select-wrap"><select id="voiceSelect">
+            <optgroup label="American English">
+              <option value="am_michael" selected>Michael — American</option>
+              <option value="am_fenrir">Fenrir — American</option>
+              <option value="am_puck">Puck — American</option>
+              <option value="am_onyx">Onyx — American</option>
+              <option value="am_echo">Echo — American</option>
+              <option value="am_liam">Liam — American</option>
+              <option value="am_adam">Adam — American</option>
+            </optgroup>
+            <optgroup label="British English">
+              <option value="bm_george">George — British</option>
+              <option value="bm_fable">Fable — British</option>
+              <option value="bm_daniel">Daniel — British</option>
+              <option value="bm_lewis">Lewis — British</option>
+            </optgroup>
+          </select><span class="select-chevron">⌄</span></div>
+          <div class="voice-note"><span class="note-icon">i</span><span>Voice quality is subjective. Generate a short test before rendering a long script.</span></div>
+
+          <div class="blend-toggle-row">
+            <label class="toggle-label" for="blendToggle">
+              <input id="blendToggle" type="checkbox">
+              <span class="toggle-ui" aria-hidden="true"></span>
+              <span class="toggle-copy"><strong>Create a hybrid voice</strong><small>Blend two Kokoro voice styles</small></span>
+            </label>
+            <span class="experimental-tag">EXPERIMENTAL</span>
+          </div>
+          <div id="blendControls" class="blend-controls hidden">
+            <div class="blend-intro">Choose a second voice and mix their speaker styles into one synthesized voice. Keep both voices in the same accent family.</div>
+            <label class="field-label" for="blendVoiceSelect">SECOND VOICE</label>
+            <div class="select-wrap"><select id="blendVoiceSelect">
+              <option value="am_fenrir" selected>Fenrir — American</option>
+              <option value="am_michael">Michael — American</option>
+              <option value="am_puck">Puck — American</option>
+              <option value="am_onyx">Onyx — American</option>
+              <option value="am_echo">Echo — American</option>
+              <option value="am_liam">Liam — American</option>
+              <option value="am_adam">Adam — American</option>
+            </select><span class="select-chevron">⌄</span></div>
+            <div class="slider-heading blend-slider-heading"><label class="field-label" for="blendRange">SECOND VOICE CONTRIBUTION</label><span class="slider-value" id="blendValue">50% B</span></div>
+            <input id="blendRange" type="range" min="10" max="90" step="5" value="50" class="range-input">
+            <div class="range-labels"><span>Mostly primary</span><span>Balanced</span><span>Mostly second</span></div>
+            <p class="blend-legal-note">This can make a different-sounding timbre, but it does not create a new trained model or guarantee copyright clearance or monetization.</p>
+          </div>
+
+          <div class="setting-divider"></div>
+          <div class="slider-heading"><label class="field-label" for="speedRange">SPEAKING SPEED</label><span class="slider-value" id="speedValue">1.00×</span></div>
+          <input id="speedRange" type="range" min="0.75" max="1.25" step="0.05" value="1" class="range-input">
+          <div class="range-labels"><span>Slower</span><span>Natural</span><span>Faster</span></div>
+
+          <div class="setting-divider"></div>
+          <div class="output-spec"><div><span class="spec-icon">♫</span><span>Output format</span></div><strong>WAV · 24 kHz · Mono</strong></div>
+          <div class="output-spec"><div><span class="spec-icon">⌁</span><span>Processing</span></div><strong>Browser / device</strong></div>
+          <div class="private-note"><span class="lock-icon">▣</span><div><strong>Private by design</strong><p>Your script and generated audio are processed in this browser and are not uploaded. Model files are downloaded from the model repository on first use.</p></div></div>
+        </aside>
+      </div>
+
+      <section class="render-row">
+        <div class="render-copy"><span class="step-number">03</span><div><h2>Generate narration</h2><p id="renderHint">The first run downloads and loads the model. Later runs reuse cached model files; speed depends on your device.</p></div></div>
+        <button id="generateBtn" class="generate-btn" type="button"><span class="generate-icon">✦</span><span id="generateLabel">Generate audio</span><span class="arrow">↗</span></button>
+      </section>
+
+      <section id="progressPanel" class="panel progress-panel hidden" aria-live="polite">
+        <div class="progress-top"><div><p class="eyebrow">RENDER STATUS</p><h2 id="progressTitle">Preparing engine</h2><p id="progressMessage">The local engine is starting.</p></div><strong id="progressPercent">0%</strong></div>
+        <div class="progress-track"><div id="progressBar"></div></div>
+        <div class="progress-bottom"><span id="progressStage">Initializing</span><span id="chunkCount"></span></div>
+        <div id="errorBox" class="error-box hidden"></div><button id="cancelBtn" class="cancel-btn hidden" type="button">Cancel generation</button>
+      </section>
+
+      <section id="resultPanel" class="panel result-panel hidden">
+        <div class="result-heading"><div><p class="eyebrow">AUDIO READY</p><h2>Your narration</h2><p id="resultMeta">WAV · 24 kHz · Mono</p></div><span class="ready-indicator"><span></span>Ready</span></div>
+        <audio id="audioPlayer" controls preload="metadata"></audio>
+        <div class="result-bottom"><div class="duration-box"><span class="duration-icon">◷</span><div><small>Audio duration</small><strong id="audioDuration">—</strong></div></div><a id="downloadBtn" class="download-btn" href="#"><span>↓</span> Download WAV</a></div>
+      </section>
+
+      <footer><div class="footer-brand"><span class="mini-mark">S</span><span>SEN VOICE STUDIO</span></div><p>Local-first tool · No subscription · No online API</p><p class="footer-disclaimer">Model and voice licenses are separate from YouTube monetization eligibility. Check licenses before commercial distribution.</p></footer>
+    </main>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
